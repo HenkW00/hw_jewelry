@@ -36,8 +36,9 @@ AddEventHandler('hw_jewelry:startRobbery', function()
     collectedPoints[_source] = {} 
 
     TriggerClientEvent('esx:showNotification', _source, "Robbery started, hurry up!")
+    TriggerClientEvent('esx:showNotification', _source, "Wait for 15 minutes! Otherwise u wont receive bonus payout!")
 
-    Citizen.SetTimeout(5000, function()
+    Citizen.SetTimeout(10000, function()
         NotifyPolice()
     end)
 
