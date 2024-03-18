@@ -1,4 +1,11 @@
-ESX = exports['es_extended']:getSharedObject()
+ESX = nil
+
+Citizen.CreateThread(function()
+    while ESX == nil do
+        TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
+        Citizen.Wait(0)
+    end
+end)
 
 Citizen.CreateThread(function()
     while true do
@@ -14,7 +21,7 @@ Citizen.CreateThread(function()
                     TriggerServerEvent('hw_jewelry:startRobbery')
                 end
             end
-        end
+        end        
 
         for index, point in ipairs(Config.RobPoints) do
             local distToPoint = GetDistanceBetweenCoords(playerCoords, point.x, point.y, point.z, true)
@@ -29,25 +36,25 @@ Citizen.CreateThread(function()
 end)
 
 RegisterNetEvent('hw_jewelry:startMechanicEmote')
-AddEventHandler('hw_jewelry:startMechanicEmote', function(pointIndex)
+AddEventHandler('hw_jewelry:startMechanicEmote', function()
     local playerPed = PlayerPedId()
     TaskStartScenarioInPlace(playerPed, "WORLD_HUMAN_WELDING", 0, true)
-    Citizen.Wait(5000) 
+    Citizen.Wait(5000)
     ClearPedTasks(playerPed)
-    TriggerServerEvent('hw_jewelry:rewardItem', pointIndex) 
 end)
 
 function DrawText3D(x, y, z, text)
     local onScreen, _x, _y = World3dToScreen2d(x, y, z)
-    local pX, pY, pZ = table.unpack(GetGameplayCamCoords())
-    SetTextScale(0.35, 0.35)
-    SetTextFont(4)
-    SetTextProportional(1)
-    SetTextColour(255, 255, 255, 215)
-    SetTextEntry("STRING")
-    SetTextCentre(1)
-    AddTextComponentString(text)
-    DrawText(_x, _y)
+    if onScreen then
+        SetTextScale(0.35, 0.35)
+        SetTextFont(4)
+        SetTextProportional(1)
+        SetTextColour(255, 255, 255, 215)
+        SetTextEntry("STRING")
+        SetTextCentre(1)
+        AddTextComponentString(text)
+        DrawText(_x, _y)
+    end
 end
 
 RegisterNetEvent('hw_jewelry:createPoliceBlip')
@@ -55,12 +62,11 @@ AddEventHandler('hw_jewelry:createPoliceBlip', function(location)
     local blip = AddBlipForCoord(location.x, location.y, location.z)
     SetBlipSprite(blip, 161)
     SetBlipScale(blip, 1.0)
-    SetBlipColour(blip, 3) 
+    SetBlipColour(blip, 3)
     BeginTextCommandSetBlipName("STRING")
     AddTextComponentString('Robbery')
     EndTextCommandSetBlipName(blip)
     SetBlipAsShortRange(blip, false)
-
     Citizen.SetTimeout(30000, function() 
         RemoveBlip(blip)
     end)
