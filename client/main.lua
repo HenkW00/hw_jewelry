@@ -7,6 +7,9 @@ Citizen.CreateThread(function()
     end
 end)
 
+-------------------
+---START ROBBERY---
+-------------------
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(0)
@@ -25,7 +28,7 @@ Citizen.CreateThread(function()
 
         for index, point in ipairs(Config.RobPoints) do
             local distToPoint = GetDistanceBetweenCoords(playerCoords, point.x, point.y, point.z, true)
-            if distToPoint < 1.5 then
+            if distToPoint < 1.0 then
                 DrawText3D(point.x, point.y, point.z, "~r~Press E to collect")
                 if IsControlJustReleased(0, 38) then
                     TriggerServerEvent('hw_jewelry:collectItem', index)
@@ -35,6 +38,9 @@ Citizen.CreateThread(function()
     end
 end)
 
+-----------------
+---START EMOTE---
+-----------------
 RegisterNetEvent('hw_jewelry:startMechanicEmote')
 AddEventHandler('hw_jewelry:startMechanicEmote', function()
     local playerPed = PlayerPedId()
@@ -57,6 +63,9 @@ function DrawText3D(x, y, z, text)
     end
 end
 
+-----------------
+---POLICE BLIP---
+-----------------
 RegisterNetEvent('hw_jewelry:createPoliceBlip')
 AddEventHandler('hw_jewelry:createPoliceBlip', function(location)
     local blip = AddBlipForCoord(location.x, location.y, location.z)

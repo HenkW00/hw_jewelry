@@ -1,16 +1,29 @@
 Config = {}
+Config.Lang = 'en' -- You can add/change in locales.lua
 
-Config.Mode = 'test' -- Possible values: 'active', 'test', 'debug'
+----------------
+----SETTINGS----
+----------------
+Config.Mode = 'debug' -- Possible values: 'active', 'test', 'debug'
 Config.checkForUpdates = true -- Recommended to leave on true
 Config.Webhook = "https://discord.com/api/webhooks/1218962573156814898/OWs4X7x4nTiCZCnz7Vth6YmD7puo54K2MIsxCsrpaAM9n-psdrhGGLDjrnDF1GFldYCv" -- For discord logging :)
 
+-------------
+----UTILS----
+-------------
 Config.PoliceJobs = {'police', 'sheriff'} -- Jobs that will be known as police
 Config.Weapons = {'WEAPON_PISTOL', 'WEAPON_ASSAULTRIFLE'} -- Weapons for starting robbery
 
+-------------
+---ROBBERY---
+-------------
 Config.RobberyDuration = {active = 900000, test = 60000, debug = 900000} -- Duration in milliseconds
 Config.RewardItems = {'diamond', 'ring', 'goldbar', 'rolex'} -- Reward items for collecting
 Config.Payout = 50000 -- Payout that player will receive after 15 minutes
 
+--------------
+---LOCATION---
+--------------
 Config.StartLocation = {x = -630.79, y = -229.25, z = 38.06} -- Location where player needs to start robbery
 Config.RobPoints = { -- Collecting points for robbery
     {x = -626.16, y = -238.13, z = 38.06},
