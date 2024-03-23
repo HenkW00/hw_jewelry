@@ -2,6 +2,7 @@ ESX = exports['es_extended']:getSharedObject()
 
 local isRobberyActive = false
 local collectedPoints = {}
+local robberyStartTime = nil
 
 -----------------
 ---DISCORD LOG---
@@ -45,8 +46,9 @@ AddEventHandler('hw_jewelry:startRobbery', function()
     debugPrint("Received 'hw_jewelry:startRobbery' event from player ^3" .. _source)
 
     if isRobberyActive then
+        local playerName = GetPlayerName(_source)
         TriggerClientEvent('esx:showNotification', _source, '~y~A robbery is already in progress.')
-        debugPrint("Robbery already in ^3progress^0, notifying player ^3" .. _source)
+        debugPrint("Robbery already in ^3progress^0, notifying player ^3" .. playerName)
         return
     end
 
@@ -57,35 +59,57 @@ AddEventHandler('hw_jewelry:startRobbery', function()
         
         if itemCount and itemCount > 0 then
             hasRequiredWeapons = true
-            debugPrint("Player ^3" .. _source .. "^5 has required weapon: ^3" .. requiredItem)
+            local playerName = GetPlayerName(_source)
+            debugPrint("Player ^3" .. playerName .. "^5 has required weapon: ^3" .. requiredItem)
             break 
         end
     end
 
     if not hasRequiredWeapons then
+        local playerName = GetPlayerName(_source)
         TriggerClientEvent('esx:showNotification', _source, "~r~You need the required weapons to start the robbery.")
-        debugPrint("Player ^3" .. _source .. " ^5does ^1not ^5have required weapons, sended notify to player.")
+        debugPrint("Player ^3" .. playerName .. " ^5does ^1not ^5have required weapons, sended notify to player.")
         return
     end
 
     isRobberyActive = true
-    local robberyStartTime = os.time()
+    robberyStartTime = os.time()
     collectedPoints[_source] = {}
 
+    TriggerClientEvent('esx:showNotification', _source, "~r~Alarm triggered!")
+    TriggerClientEvent('esx:showNotification', _source, "~b~Police will be here soon!")
     TriggerClientEvent('esx:showNotification', _source, "~g~Robbery started, hurry up!")
-    TriggerClientEvent('esx:showNotification', _source, "~r~Wait for 15 minutes! ~y~Otherwise you won't receive bonus payout!")
     
     Citizen.SetTimeout(10000, function()
         NotifyPolice()
     end)
-    Citizen.SetTimeout(900000, function() 
+    Citizen.SetTimeout(Config.RobberyDuration[Config.Mode], function() 
         TriggerEvent('hw_jewelry:endRobbery', _source)
-    end)
+    end)    
 
     local playerName = GetPlayerName(_source)
     SendDiscordMessage("Robbery Started", "Robbery started by: " .. playerName)
     debugPrint("Robbery ^2started ^5by player ^3" .. _source .. "^5 at ^3" .. os.date("%c", robberyStartTime))
 end)
+
+ESX.RegisterServerCallback('hw_jewelry:checkPoliceCount', function(source, cb)
+    local xPlayers = ESX.GetPlayers()
+    local copsOnline = 0
+
+    for i=1, #xPlayers do
+        local xPlayer = ESX.GetPlayerFromId(xPlayers[i])
+        if xPlayer.job.name == 'police' then
+            copsOnline = copsOnline + 1
+        end
+    end
+
+    if copsOnline >= Config.CopsRequired then
+        cb(true)
+    else
+        cb(false)
+    end
+end)
+
 
 ------------------
 ---ITEM COLLECT---
@@ -114,12 +138,17 @@ AddEventHandler('hw_jewelry:collectItem', function(pointIndex)
     local xPlayer = ESX.GetPlayerFromId(_source)
     if xPlayer then
         local item = Config.RewardItems[math.random(#Config.RewardItems)]
-        local amount = math.random(1, 5)
+        local amount = math.random(5, 10)
+        local amount2 = math.random(2500, 8000)
         Citizen.Wait(5000)
         xPlayer.addInventoryItem(item, amount)
+        xPlayer.addInventoryItem('black_money', amount2)
         TriggerClientEvent('esx:showNotification', _source, '~y~You ~g~succesfully ~y~collected item(s).')
-        SendDiscordMessage("Reward Collect", "Player " .. _source .. " collected: " .. item .. " x" .. amount .. " from a collection point!")
-        debugPrint("Player ^3" .. _source .. "^5 collected reward: ^3" .. item .. " ^3x" .. amount .. "^5 from point ^3" .. pointIndex)
+        local playerName = GetPlayerName(_source)
+        SendDiscordMessage("Reward Collect", "Player " .. playerName .. " collected: " .. item .. " x" .. amount .. " from a collection point!")
+        SendDiscordMessage("Reward Collect", "Player " .. playerName .. " collected black money: " .. amount2 .. " from a collection point!")
+        debugPrint("Player ^3" .. playerName .. "^5 collected reward: ^3" .. item .. " ^3x" .. amount .. "^5 from point ^3" .. pointIndex)
+        debugPrint("Player ^3" .. playerName .. "^5 collected black money: ^3$"  .. amount2 .. "^5 from point ^3" .. pointIndex)
     else
         print("^0[^1DEBUG^0] ^1Error: Player not found while trying to add item to inventory.")
     end
@@ -133,8 +162,8 @@ AddEventHandler('hw_jewelry:startMechanicEmote', function(pointIndex)
     local _source = source
     local playerPed = GetPlayerPed(_source)
     if playerPed then
-        TaskStartScenarioInPlace(playerPed, "WORLD_HUMAN_WELDING", 0, true)
-        Citizen.Wait(5000)
+        TaskStartScenarioInPlace(playerPed, "WORLD_HUMAN_WELDING", 1, true)
+        Citizen.Wait(10000)
         ClearPedTasks(playerPed)
         TriggerServerEvent('hw_jewelry:rewardItem', pointIndex)
     else
@@ -157,28 +186,28 @@ AddEventHandler('hw_jewelry:endRobbery', function(source)
     end
 
     local elapsedTime = os.time() - robberyStartTime
+    local durationInSeconds = Config.RobberyDuration[Config.Mode] / 1000 
     local xPlayer = ESX.GetPlayerFromId(_source)
 
     if xPlayer then
-        if elapsedTime >= Config.RobberyDuration[Config.Mode] then 
+        if elapsedTime >= durationInSeconds then 
             xPlayer.addAccountMoney('black_money', Config.Payout)
             TriggerClientEvent('esx:showNotification', _source, "~g~Robbery completed. ~y~You received $" .. Config.Payout .. " in black money.")
-            SendDiscordMessage("Final Payout", "Player " .. _source .. " collected " .. Config.Payout .. " as final payout from the robbery")
-            debugPrint("Robbery ^3completed successfully ^5for player ^3" .. _source .. "^5. Payout: ^3$" .. Config.Payout)
+            SendDiscordMessage("Final Payout", "Player " .. _source .. " collected $" .. Config.Payout .. " in black money as final payout from the robbery")
+            debugPrint("Robbery completed successfully for player " .. _source .. ". Payout: $" .. Config.Payout .. " in black money.")
         else
             TriggerClientEvent('esx:showNotification', _source, "~r~Robbery ended too early, no payout.")
-            debugPrint("Robbery ^1ended ^5too early for player ^3" .. _source .. "^5, ^1no ^5payout has been given.")
+            debugPrint("Robbery ended too early for player " .. _source .. ", no payout given.")
         end
     else
         print("^0[^1DEBUG^0] ^1Error: Player not found while trying to end robbery.")
     end
 
     isRobberyActive = false
-    collectedPoints = {} 
+    collectedPoints = {}
     SendDiscordMessage("Robbery Ended", "Robbery has been concluded.")
-    debugPrint("Robbery ^1ended ^5and data reset.")
+    debugPrint("Robbery ended and data reset.")
 end)
-
 
 ----------------
 -----Alert------
@@ -193,12 +222,16 @@ function NotifyPolice()
     for _, playerId in ipairs(players) do
         local xPlayer = ESX.GetPlayerFromId(playerId)
         if xPlayer.job and table.includes(Config.PoliceJobs, xPlayer.job.name) then
-            TriggerClientEvent('esx:showNotification', playerId, '~r~Robbery in progress at the ~y~Jewelry Store!')
+            TriggerClientEvent('esx:showNotification', playerId, '[10-90] ~r~Robbery in progress at the ~y~Jewelry Store!')
             TriggerClientEvent('hw_jewelry:createPoliceBlip', playerId, Config.StartLocation)
         end
     end
 end
 
+
+----------------
+-----HELPER-----
+----------------
 function table.includes(table, element)
     for _, value in pairs(table) do
         if value == element then
@@ -223,3 +256,5 @@ RegisterCommand('startrobbery', function(source, args, rawCommand)
         TriggerClientEvent('esx:showNotification', _source, '~y~You can only start the robbery remotely in ~g~test mode.')
     end
 end, true)
+
+

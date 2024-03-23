@@ -11,15 +11,17 @@ Config.Webhook = "https://discord.com/api/webhooks/1218962573156814898/OWs4X7x4n
 -------------
 ----UTILS----
 -------------
+Config.CopsRequired = 0 -- Required cops needed for the robbery to start
 Config.PoliceJobs = {'police', 'sheriff'} -- Jobs that will be known as police
 Config.Weapons = {'WEAPON_PISTOL', 'WEAPON_ASSAULTRIFLE'} -- Weapons for starting robbery
 
 -------------
 ---ROBBERY---
 -------------
-Config.RobberyDuration = {active = 900000, test = 60000, debug = 900000} -- Duration in milliseconds
+Config.RobberyDuration = {active = 900000, test = 60000, debug = 1800000} -- Duration in milliseconds
 Config.RewardItems = {'diamond', 'ring', 'goldbar', 'rolex'} -- Reward items for collecting
-Config.Payout = 50000 -- Payout that player will receive after 15 minutes
+Config.Payout = 50000 -- Payout that player will receive after robbery duration
+Config.Time = 10 -- Time in minutes for the robbery
 
 --------------
 ---LOCATION---
