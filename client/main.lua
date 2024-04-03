@@ -1,11 +1,4 @@
-ESX = nil
-
-Citizen.CreateThread(function()
-    while ESX == nil do
-        TriggerEvent('esx:getSharedObject', function(obj) ESX = obj end)
-        Citizen.Wait(0)
-    end
-end)
+ESX = exports['es_extended']:getSharedObject()
 
 local isRobbing = false
 local startTime = 0
@@ -23,15 +16,15 @@ Citizen.CreateThread(function()
         if distToStart < 10 then
             DrawMarker(1, Config.StartLocation.x, Config.StartLocation.y, Config.StartLocation.z - 1.0, 0, 0, 0, 0, 0, 0, 2.0, 2.0, 1.0, 255, 0, 0, 100, false, true, 2, false, nil, nil, false)
             if distToStart < 2 and not isRobbing then
-                ESX.ShowHelpNotification("Press ~INPUT_CONTEXT~ to start the robbery")
-                if IsControlJustReleased(0, 38) then 
+                ESX.ShowHelpNotification("~y~Press ~INPUT_CONTEXT~ to start the robbery")
+                if IsControlJustReleased(0, 38) then
                     ESX.TriggerServerCallback('hw_jewelry:checkPoliceCount', function(canRob)
                         if canRob then
                             isRobbing = true
                             startTime = GetGameTimer()
                             TriggerServerEvent('hw_jewelry:startRobbery')
                         else
-                            ESX.ShowNotification("Not enough police online to start the robbery.")
+                            ESX.ShowNotification("~r~Not enough police online to start the robbery.")
                         end
                     end)
                 end
@@ -48,7 +41,7 @@ Citizen.CreateThread(function()
                 DrawHUDText(string.format("~r~Time left: %02d:%02d", mins, secs), 0.5, 0.05)
             else
                 isRobbing = false
-                ESX.ShowNotification("Robbery completed")
+                ESX.ShowNotification("~g~Robbery completed, dont get ~r~caught!")
             end
         end
              
@@ -57,7 +50,7 @@ Citizen.CreateThread(function()
 
         for index, point in ipairs(Config.RobPoints) do
             local distToPoint = GetDistanceBetweenCoords(playerCoords, point.x, point.y, point.z, true)
-            if distToPoint < 1.0 then
+            if distToPoint < 1.0 and isRobbing then
                 DrawText3D(point.x, point.y, point.z, "~r~Press E to collect")
                 if IsControlJustReleased(0, 38) then
                     TriggerServerEvent('hw_jewelry:collectItem', index)
@@ -121,7 +114,7 @@ AddEventHandler('hw_jewelry:createPoliceBlip', function(location)
     SetBlipScale(blip, 1.0)
     SetBlipColour(blip, 3)
     BeginTextCommandSetBlipName("STRING")
-    AddTextComponentString('Jewelry Robbery In Progress')
+    AddTextComponentString('~r~Jewelry Robbery ~y~In Progress')
     EndTextCommandSetBlipName(blip)
     SetBlipAsShortRange(blip, false)
     Citizen.SetTimeout(90000, function() 
@@ -129,3 +122,10 @@ AddEventHandler('hw_jewelry:createPoliceBlip', function(location)
     end)
 end)
 
+-----------------
+---END ROBBERY---
+-----------------
+RegisterNetEvent('hw_jewelry:robberyEnded')
+AddEventHandler('hw_jewelry:robberyEnded', function()
+    isRobbing = false
+end)
