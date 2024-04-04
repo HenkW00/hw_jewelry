@@ -3,7 +3,6 @@ ESX = exports['es_extended']:getSharedObject()
 local isRobberyActive = false
 local collectedPoints = {}
 local robberyStartTime = nil
-local robberId = nil
 
 -----------------
 ---DISCORD LOG---
@@ -75,7 +74,6 @@ AddEventHandler('hw_jewelry:startRobbery', function()
 
     isRobberyActive = true
     robberyStartTime = os.time()
-    robberId = _source
     collectedPoints[_source] = {}
 
     TriggerClientEvent('esx:showNotification', _source, "~r~Alarm triggered!")
@@ -86,8 +84,8 @@ AddEventHandler('hw_jewelry:startRobbery', function()
         NotifyPolice()
     end)
     Citizen.SetTimeout(Config.RobberyDuration[Config.Mode], function() 
-        TriggerEvent('hw_jewelry:endRobbery')
-    end)  
+        TriggerEvent('hw_jewelry:endRobbery', _source)
+    end)    
 
     local playerName = GetPlayerName(_source)
     SendDiscordMessage("Robbery Started", "Robbery started by: " .. playerName)
@@ -123,16 +121,7 @@ AddEventHandler('hw_jewelry:collectItem', function(pointIndex)
 
     if not isRobberyActive then
         TriggerClientEvent('esx:showNotification', _source, "~r~There's no active robbery.")
-        return
-    end
-
-    if not isRobberyActive then
-        TriggerClientEvent('esx:showNotification', _source, "~r~There's no active robbery.")
         debugPrint("Player " .. _source .. " attempted to collect item, but there's no active robbery.")
-        return
-    elseif _source ~= robberId then
-        TriggerClientEvent('esx:showNotification', _source, "~r~You did not initiate the robbery.")
-        debugPrint("Player " .. _source .. " attempted to collect item, but is not the robber.")
         return
     end
 
@@ -149,8 +138,8 @@ AddEventHandler('hw_jewelry:collectItem', function(pointIndex)
     local xPlayer = ESX.GetPlayerFromId(_source)
     if xPlayer then
         local item = Config.RewardItems[math.random(#Config.RewardItems)]
-        local amount = math.random(10, 15)
-        local amount2 = math.random(10000, 20000)
+        local amount = math.random(5, 10)
+        local amount2 = math.random(2500, 8000)
         Citizen.Wait(5000)
         xPlayer.addInventoryItem(item, amount)
         xPlayer.addInventoryItem('black_money', amount2)
@@ -202,10 +191,10 @@ AddEventHandler('hw_jewelry:endRobbery', function(source)
 
     if xPlayer then
         if elapsedTime >= durationInSeconds then 
-            local payoutAmount = Config.Payout 
-            xPlayer.addAccountMoney('black_money', payoutAmount)
-            TriggerClientEvent('esx:showNotification', _source, "You received $" .. payoutAmount .. " in black money.")
-            debugPrint("Robbery completed successfully for player " .. _source .. ". Payout: $" .. payoutAmount .. " in black money.")
+            xPlayer.addAccountMoney('black_money', Config.Payout)
+            TriggerClientEvent('esx:showNotification', _source, "~g~Robbery completed. ~y~You received $" .. Config.Payout .. " in black money.")
+            SendDiscordMessage("Final Payout", "Player " .. _source .. " collected $" .. Config.Payout .. " in black money as final payout from the robbery")
+            debugPrint("Robbery completed successfully for player " .. _source .. ". Payout: $" .. Config.Payout .. " in black money.")
         else
             TriggerClientEvent('esx:showNotification', _source, "~r~Robbery ended too early, no payout.")
             debugPrint("Robbery ended too early for player " .. _source .. ", no payout given.")
@@ -215,9 +204,7 @@ AddEventHandler('hw_jewelry:endRobbery', function(source)
     end
 
     isRobberyActive = false
-    TriggerClientEvent('hw_jewelry:robberyEnded', -1)
     collectedPoints = {}
-    robberId = nil
     SendDiscordMessage("Robbery Ended", "Robbery has been concluded.")
     debugPrint("Robbery ended and data reset.")
 end)
