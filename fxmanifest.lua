@@ -3,7 +3,7 @@ game 'gta5'
 
 author 'HenkW'
 description 'Jewelry Store Robbery Script'
-version '1.0.6'
+version '1.0.7'
 
 client_scripts {
     'client/main.lua',
